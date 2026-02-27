@@ -4,3 +4,4 @@ python-dotenv
 dbt-core
 dbt-duckdb
 duckdb
+statsmodels

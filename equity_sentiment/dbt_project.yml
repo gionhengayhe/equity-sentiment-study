@@ -31,5 +31,7 @@ models:
   equity_sentiment:
     staging:
       +materialized: view
+    intermediate:
+      +materialized: table
     marts:
       +materialized: table

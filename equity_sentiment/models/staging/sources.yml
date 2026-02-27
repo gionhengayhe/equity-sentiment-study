@@ -3,17 +3,17 @@ version: 2
 sources:
   - name: raw_ohlcs
     meta:
-      external_location: "read_parquet('../data/processed/ohlcs/stg_ohlcs-*.parquet')"
+      external_location: "read_parquet('D:/DataEngineer/Learn-yourself/equity-sentiment-study/data/processed/ohlcs/stg_ohlcs-*.parquet')"
     tables:
       - name: ohlcs
 
   - name: raw_news
     meta:
-      external_location: "read_parquet('../data/processed/news/stg_news-*.parquet')"
+      external_location: "read_parquet('D:/DataEngineer/Learn-yourself/equity-sentiment-study/data/processed/news/stg_news-*.parquet')"
     tables:
       - name: news
   - name: raw_companies
     meta:
-      external_location: "read_parquet('../data/processed/companies/stg_companies.parquet')"
+      external_location: "read_parquet('D:/DataEngineer/Learn-yourself/equity-sentiment-study/data/processed/companies/stg_companies.parquet')"
     tables:
       - name: companies
