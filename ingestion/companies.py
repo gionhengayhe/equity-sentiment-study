@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 COMPANY_FIELDS = ["ticker", "name", "exchange", "industry", "sector", "currency", "isDelisted", "category", "sic"]
-RAW_PATH = "data/raw/companies.json"
-PROCESSED_PATH = "data/processed/companies.parquet"
+RAW_PATH = "data/raw/companies/crawl_companies.json"
+PROCESSED_PATH = "data/processed/companies/stg_companies.parquet"
 
 
 def crawl_companies(exchanges: list[str] = ["NASDAQ", "NYSE"]) -> None:

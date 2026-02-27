@@ -1,0 +1,58 @@
+[0m16:02:06.878311 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001433574D010>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000143368CFD90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000143368CF9D0>]}
+
+
+============================== 16:02:06.882720 | ef217dec-be1c-4959-b1bc-00fbda79479d ==============================
+[0m16:02:06.882720 [info ] [MainThread]: Running with dbt=1.11.6
+[0m16:02:06.883315 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'printer_width': '80', 'write_json': 'True', 'empty': 'None', 'log_cache_events': 'False', 'introspect': 'True', 'cache_selected_only': 'False', 'fail_fast': 'False', 'debug': 'False', 'log_format': 'default', 'profiles_dir': 'C:\\Users\\luudu\\.dbt', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'partial_parse': 'True', 'invocation_command': 'dbt init equity_sentiment', 'use_colors': 'True', 'indirect_selection': 'eager', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m16:02:06.904313 [debug] [MainThread]: Starter project path: d:\DataEngineer\Learn-yourself\equity-sentiment-study\.venv\Lib\site-packages\dbt\include\starter_project
+[0m16:02:06.929043 [info ] [MainThread]: 
+Your new dbt project "equity_sentiment" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m16:02:06.929713 [info ] [MainThread]: Setting up your profile.
+[0m16:02:27.703328 [debug] [MainThread]: Command `dbt init` succeeded at 16:02:27.703110 after 20.94 seconds
+[0m16:02:27.703798 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000143368FA650>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000143361F44D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000014337AAC270>]}
+[0m16:02:27.704235 [debug] [MainThread]: Flushing usage events
+[0m16:02:28.968401 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m17:50:39.883421 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000240EB5F0980>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000240EC72FED0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000240EC72FB10>]}
+
+
+============================== 17:50:39.887367 | 2f4060c2-642e-4940-95f6-748e4405fdb0 ==============================
+[0m17:50:39.887367 [info ] [MainThread]: Running with dbt=1.11.6
+[0m17:50:39.888016 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'log_cache_events': 'False', 'empty': 'False', 'cache_selected_only': 'False', 'log_format': 'default', 'debug': 'False', 'fail_fast': 'False', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'profiles_dir': 'C:\\Users\\luudu\\.dbt', 'invocation_command': 'dbt run', 'indirect_selection': 'eager', 'use_colors': 'True', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m17:50:39.888514 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path D:\DataEngineer\Learn-yourself\equity-sentiment-study\dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m17:50:39.889599 [debug] [MainThread]: Command `dbt run` failed at 17:50:39.889464 after 0.13 seconds
+[0m17:50:39.889954 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000240EC742520>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000240EC769370>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000240EC6846B0>]}
+[0m17:50:39.890323 [debug] [MainThread]: Flushing usage events
+[0m17:50:41.149866 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m17:55:43.725360 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016EE6260980>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016EE3D7C050>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016EE739FC50>]}
+
+
+============================== 17:55:43.729290 | 5bf7c79b-c759-425a-be5f-3593ca1e0811 ==============================
+[0m17:55:43.729290 [info ] [MainThread]: Running with dbt=1.11.6
+[0m17:55:43.729918 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'log_cache_events': 'False', 'empty': 'False', 'cache_selected_only': 'False', 'fail_fast': 'False', 'debug': 'False', 'log_format': 'default', 'profiles_dir': 'C:\\Users\\luudu\\.dbt', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'partial_parse': 'True', 'use_colors': 'True', 'invocation_command': 'dbt run', 'indirect_selection': 'eager', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m17:55:43.730341 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path D:\DataEngineer\Learn-yourself\equity-sentiment-study\dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m17:55:43.731240 [debug] [MainThread]: Command `dbt run` failed at 17:55:43.731132 after 0.11 seconds
+[0m17:55:43.731556 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016EE73B23F0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016EE73D9370>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016EE72F46B0>]}
+[0m17:55:43.731926 [debug] [MainThread]: Flushing usage events
+[0m17:55:45.002314 [debug] [MainThread]: An error was encountered while trying to flush usage events

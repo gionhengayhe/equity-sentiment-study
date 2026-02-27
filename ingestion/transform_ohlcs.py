@@ -67,7 +67,12 @@ def transform_ohlcs_range(days: int = 60):
     today = datetime.datetime.now()
 
     for i in range(2, days + 2):
-        date_str = (today - datetime.timedelta(days=i)).strftime("%Y%m%d")
+        date = today - datetime.timedelta(days=i)
+
+        if date.weekday() >= 5:  # Skip weekends, same as crawl
+            print(f"[{date.strftime('%Y%m%d')}] Weekend, skipping.")
+            continue
+        date_str = date.strftime("%Y%m%d")
         out_path = PROCESSED_PATH.format(date=date_str)
 
         if os.path.exists(out_path):

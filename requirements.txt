@@ -1,3 +1,6 @@
 requests
 polars
 python-dotenv
+dbt-core
+dbt-duckdb
+duckdb

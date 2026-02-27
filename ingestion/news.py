@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 RAW_PATH = "data/raw/news/crawl_news-{date}.json"
-PROCESSED_PATH = "data/processed/news/news-{date}.parquet"
+PROCESSED_PATH = "data/processed/news/stg_news-{date}.parquet"
 DAILY_REQUEST_LIMIT = 25
 
 
