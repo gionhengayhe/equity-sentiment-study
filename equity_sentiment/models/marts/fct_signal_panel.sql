@@ -13,7 +13,8 @@ WITH base AS (
         -- Sentiment features
         s.weighted_sentiment,
         s.news_count,
-        s.avg_relevance,
+        s.total_relevance,
+        s.log_news_count,
 
         -- Company metadata
         c.name,
