@@ -1,5 +1,5 @@
 import json
-import datetime
+import glob
 import os
 import polars as pl
 
@@ -31,8 +31,6 @@ def transform_ohlcs(date_str: str) -> pl.DataFrame:
             "v": "volume",
         })
         .select(["ticker", "timestamp_ms", "open", "high", "low", "close", "volume"])
-
-        # Convert ms timestamp → datetime (UTC) → US/Eastern date
         .with_columns(
             pl.from_epoch(pl.col("timestamp_ms"), time_unit="ms")
               .dt.convert_time_zone("America/New_York")
@@ -40,8 +38,6 @@ def transform_ohlcs(date_str: str) -> pl.DataFrame:
               .alias("date_t")
         )
         .drop("timestamp_ms")
-
-        # Filters
         .filter(
             (pl.col("close") > 0) &
             (pl.col("volume") > 0) &
@@ -49,8 +45,6 @@ def transform_ohlcs(date_str: str) -> pl.DataFrame:
             (pl.col("high") > 0) &
             (pl.col("low") > 0)
         )
-
-        # Deduplicate
         .unique(subset=["ticker", "date_t"])
         .sort(["ticker", "date_t"])
     )
@@ -63,29 +57,35 @@ def transform_ohlcs(date_str: str) -> pl.DataFrame:
     return df
 
 
-def transform_ohlcs_range(days: int = 60):
-    today = datetime.datetime.now()
+def transform_all_ohlcs():
+    raw_files = sorted(glob.glob("data/raw/ohlcs/crawl_ohlcs-*.json"))
 
-    for i in range(2, days + 2):
-        date = today - datetime.timedelta(days=i)
+    if not raw_files:
+        print("No raw files found.")
+        return
 
-        if date.weekday() >= 5:  # Skip weekends, same as crawl
-            print(f"[{date.strftime('%Y%m%d')}] Weekend, skipping.")
-            continue
-        date_str = date.strftime("%Y%m%d")
+    print(f"Found {len(raw_files)} raw files.")
+    skipped = transformed = failed = 0
+
+    for raw_path in raw_files:
+        # Extract date from filename: crawl_ohlcs-20260101.json → 20260101
+        date_str = os.path.basename(raw_path).replace("crawl_ohlcs-", "").replace(".json", "")
         out_path = PROCESSED_PATH.format(date=date_str)
 
         if os.path.exists(out_path):
-            print(f"[{date_str}] Already transformed, skipping.")
+            print(f"[{date_str}] Already exists, skipping.")
+            skipped += 1
             continue
 
         try:
             transform_ohlcs(date_str)
-        except FileNotFoundError as e:
-            print(f"[{date_str}] Skipping: {e}")
+            transformed += 1
         except Exception as e:
             print(f"[{date_str}] Failed: {e}")
+            failed += 1
+
+    print(f"\nDone. Transformed: {transformed} | Skipped: {skipped} | Failed: {failed}")
 
 
 if __name__ == "__main__":
-    transform_ohlcs_range(days=60)
+    transform_all_ohlcs()
