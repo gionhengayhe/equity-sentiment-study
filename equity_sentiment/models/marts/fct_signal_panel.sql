@@ -11,7 +11,11 @@ WITH base AS (
         p.forward_return_1d,
 
         -- Sentiment features
-        s.weighted_sentiment,
+        coalesce(s.weighted_sentiment, 0) AS weighted_sentiment,
+        CASE 
+            WHEN s.weighted_sentiment IS NULL THEN 0
+            ELSE 1
+        END AS has_sentiment_flag,
         s.news_count,
         s.total_relevance,
         s.log_news_count,
@@ -28,32 +32,84 @@ WITH base AS (
         AND p.date_t = s.date_t
     LEFT JOIN {{ ref('stg_companies') }} c
         ON p.ticker = c.ticker
+
+),
+
+-- 1️⃣ Cross-sectional daily statistics
+daily_stats AS (
+    SELECT
+        *,
+        AVG(weighted_sentiment)
+            OVER (PARTITION BY date_t) AS daily_mean_sentiment,
+
+        STDDEV_SAMP(weighted_sentiment)
+            OVER (PARTITION BY date_t) AS daily_std_sentiment
+    FROM base
+    WHERE has_sentiment_flag = 1
+
+),
+
+-- 2️⃣ Z-score computation
+z_scored AS (
+    SELECT
+        *,
+        CASE
+            WHEN daily_std_sentiment IS NOT NULL
+                 AND daily_std_sentiment != 0
+            THEN (weighted_sentiment - daily_mean_sentiment)
+                 / daily_std_sentiment
+            ELSE 0
+        END AS z_sentiment
+    FROM daily_stats
+),
+
+-- 3️⃣ Daily cross-sectional quintiles (based on z_sentiment)
+ranked AS (
+    SELECT
+        *,
+        NTILE(5) OVER (
+            PARTITION BY date_t
+            ORDER BY z_sentiment
+        ) AS sentiment_quintile
+    FROM z_scored
 )
 
 SELECT
-    *,
-    
-    -- Cross-sectional mean & std per day
-    AVG(weighted_sentiment)
-        OVER (PARTITION BY date_t) AS daily_mean_sentiment,
+    -- Keys (for star schema)
+    ticker,
+    date_t,
 
-    STDDEV_SAMP(weighted_sentiment)
-        OVER (PARTITION BY date_t) AS daily_std_sentiment,
+    -- Price
+    close,
+    volume,
+    return_1d,
+    log_return_1d,
+    forward_return_1d,
 
-    -- Z-score
-    CASE 
-        WHEN STDDEV_SAMP(weighted_sentiment)
-             OVER (PARTITION BY date_t) IS NOT NULL
-             AND STDDEV_SAMP(weighted_sentiment)
-             OVER (PARTITION BY date_t) != 0
-        THEN
-            (weighted_sentiment
-             - AVG(weighted_sentiment)
-               OVER (PARTITION BY date_t))
-            /
-            STDDEV_SAMP(weighted_sentiment)
-               OVER (PARTITION BY date_t)
-        ELSE NULL
-    END AS z_sentiment
+    -- Sentiment
+    weighted_sentiment,
+    has_sentiment_flag,
+    z_sentiment,
+    sentiment_quintile,
+    news_count,
+    total_relevance,
+    log_news_count,
 
-FROM base
+    -- Company
+    name,
+    sector,
+    industry,
+    sic,
+
+    -- Useful derived fields for dashboard slicing
+    volume * close AS dollar_volume,
+    LOG(volume * close) AS log_dollar_volume,
+
+    CASE
+        WHEN volume * close IS NULL THEN 'Unknown'
+        WHEN volume * close < 1e6 THEN 'Low Liquidity'
+        WHEN volume * close < 1e7 THEN 'Mid Liquidity'
+        ELSE 'High Liquidity'
+    END AS liquidity_bucket
+
+FROM ranked

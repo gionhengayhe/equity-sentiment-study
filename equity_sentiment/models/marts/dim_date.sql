@@ -1,7 +1,7 @@
 WITH date_spine AS (
     SELECT UNNEST(
         generate_series(
-            DATE '2026-01-01',
+            DATE '2025-01-01',
             DATE '2026-12-31',
             INTERVAL '1 day'
         )
@@ -22,6 +22,7 @@ calendar AS (
         QUARTER(d.full_date)                                    AS quarter,
         MONTH(d.full_date)                                      AS month,
         STRFTIME(d.full_date, '%B')                             AS month_name,
+        STRFTIME(d.full_date, '%Y-%m')                          AS year_month,
         WEEKOFYEAR(d.full_date)                                 AS week_of_year,
         DAYOFWEEK(d.full_date)                                  AS day_of_week,
         STRFTIME(d.full_date, '%A')                             AS day_name,
@@ -53,6 +54,7 @@ calendar AS (
 SELECT
     date_key,
     full_date,
+    year_month,
     year,
     quarter,
     month,
