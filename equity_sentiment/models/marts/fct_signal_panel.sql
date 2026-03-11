@@ -45,7 +45,7 @@ daily_stats AS (
         STDDEV_SAMP(weighted_sentiment)
             OVER (PARTITION BY date_t) AS daily_std_sentiment
     FROM base
-    WHERE has_sentiment_flag = 1
+    WHERE has_sentiment_flag = 1 and news_count > 1
 
 ),
 
@@ -110,6 +110,11 @@ SELECT
         WHEN volume * close < 1e6 THEN 'Low Liquidity'
         WHEN volume * close < 1e7 THEN 'Mid Liquidity'
         ELSE 'High Liquidity'
-    END AS liquidity_bucket
+    END AS liquidity_bucket,
 
+    CASE 
+        WHEN news_count = 2 or news_count = 3 THEN '2-3'
+        WHEN news_count = 4 or news_count = 5 THEN '4-5'
+        ELSE '5+'
+    END AS news_count_bucket
 FROM ranked

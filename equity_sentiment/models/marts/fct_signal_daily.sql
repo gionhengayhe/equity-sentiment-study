@@ -27,6 +27,12 @@ daily_universe AS (
 
 ),
 
+universe AS (
+    SELECT
+        COUNT(DISTINCT ticker) AS total_universe_stocks
+    FROM {{ ref('stg_companies') }}
+),
+
 aggregated AS (
 
     SELECT
@@ -88,10 +94,12 @@ SELECT
     -- Coverage
     a.stocks_with_signal,
     u.total_stocks,
+    un.total_universe_stocks - u.total_stocks                             AS missing_price_count,
     a.stocks_with_signal::FLOAT / NULLIF(u.total_stocks, 0)               AS coverage_ratio
 
 FROM aggregated a
 LEFT JOIN vw_aggregated v ON a.date_t = v.date_t
 LEFT JOIN daily_universe u ON a.date_t = u.date_t
+CROSS JOIN universe un
 
 ORDER BY a.date_t

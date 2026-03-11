@@ -51,7 +51,8 @@ def transform_companies() -> pl.DataFrame:
     df_filtered = df.filter(
         (~pl.col("isDelisted")) &
         (pl.col("category") == "Domestic Common Stock") &
-        (pl.col("currency") == "USD")
+        (pl.col("currency") == "USD") &
+        (pl.col("sector") != "")
     )
 
     os.makedirs(os.path.dirname(PROCESSED_PATH), exist_ok=True)

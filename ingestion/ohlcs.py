@@ -59,11 +59,11 @@ def crawl_ohlcs_range(days: int = 60):
 
         try:
             crawl_ohlcs(date)
-            time.sleep(1)  # Polygon free tier: 5 requests/min
+            time.sleep(5)  # Polygon free tier: 5 requests/min
         except Exception as e:
             print(f"[{date_str}] Failed: {e}")
             continue
 
 
 if __name__ == "__main__":
-    crawl_ohlcs_range(days=60)
+    crawl_ohlcs_range(days=200)

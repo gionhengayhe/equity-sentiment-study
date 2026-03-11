@@ -98,7 +98,7 @@ def crawl_news_range(days: int = 60):
     today = datetime.datetime.now()
     requests_used_today = 0
 
-    for i in range(2, days + 2):
+    for i in range(3, days + 2):
         if requests_used_today >= DAILY_REQUEST_LIMIT:
             print(f"\n⚠️  Reached {DAILY_REQUEST_LIMIT} requests limit. Run again tomorrow.")
             print(f"   Remaining days to crawl: {days + 2 - i}")
@@ -127,4 +127,4 @@ def crawl_news_range(days: int = 60):
 
 
 if __name__ == "__main__":
-    crawl_news_range(days=60)
+    crawl_news_range(days=250)

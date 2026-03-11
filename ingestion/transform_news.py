@@ -108,6 +108,7 @@ def transform_news(date_str: str, trading_days: list, trading_days_set: set) -> 
                 "relevance_score": relevance_score,
                 "source": source,
                 "topic_ipo_flag": topic_ipo_flag,
+                "title": title
             })
 
     if not rows:
