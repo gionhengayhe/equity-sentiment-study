@@ -5,3 +5,6 @@ dbt-core
 dbt-duckdb
 duckdb
 statsmodels
+ipykernel
+matplotlib
+seaborn
