@@ -1,105 +1,123 @@
 WITH base AS (
-
     SELECT
         p.date_t,
         p.ticker,
         p.sentiment_quintile,
-        p.forward_return_1d,
+        p.next_trading_date,
+        p.forward_return_close_to_close_1d,
         p.dollar_volume
     FROM {{ ref('fct_signal_panel') }} p
     WHERE p.sentiment_quintile IS NOT NULL
-        AND p.date_t IN (
-            SELECT full_date
-            FROM {{ ref('dim_date') }}
-            WHERE trading_day_flag = 1
-        )
-
+        AND p.forward_return_close_to_close_1d IS NOT NULL
 ),
 
--- Total universe from price (before sentiment filter)
+-- Total price universe before the sentiment eligibility filter.
 daily_universe AS (
-
     SELECT
-        date_t,
-        COUNT(DISTINCT ticker) AS total_stocks
-    FROM {{ ref('int_price_features') }}
-    GROUP BY date_t
-
-),
-
-universe AS (
-    SELECT
-        COUNT(DISTINCT ticker) AS total_universe_stocks
-    FROM {{ ref('stg_companies') }}
+        p.date_t,
+        COUNT(DISTINCT p.ticker) AS total_stocks,
+        COUNT(DISTINCT CASE WHEN c.ticker IS NULL THEN p.ticker END)
+            AS stocks_without_current_metadata
+    FROM {{ ref('int_price_features') }} p
+    LEFT JOIN {{ ref('stg_companies') }} c
+        ON p.ticker = c.ticker
+    WHERE p.forward_return_close_to_close_1d IS NOT NULL
+    GROUP BY p.date_t
 ),
 
 aggregated AS (
-
     SELECT
         date_t,
+        MIN(next_trading_date) AS return_date_t,
+        MAX(next_trading_date) AS latest_return_date_t,
 
-        -- Equal-weighted returns
-        AVG(CASE WHEN sentiment_quintile = 5 THEN forward_return_1d END)    AS q5_return,
-        AVG(CASE WHEN sentiment_quintile = 1 THEN forward_return_1d END)    AS q1_return,
+        -- Each leg invests one unit of capital. Q5 - Q1 therefore has
+        -- 200% gross exposure and 0% net exposure.
+        AVG(CASE WHEN sentiment_quintile = 5
+                 THEN forward_return_close_to_close_1d END) AS q5_return_ew,
+        AVG(CASE WHEN sentiment_quintile = 1
+                 THEN forward_return_close_to_close_1d END) AS q1_return_ew,
 
-        -- Quintile counts
-        COUNT(CASE WHEN sentiment_quintile = 5 THEN 1 END)                  AS q5_count,
-        COUNT(CASE WHEN sentiment_quintile = 1 THEN 1 END)                  AS q1_count,
-
-        -- Stocks with signal (numerator for coverage)
-        COUNT(DISTINCT ticker)                                              AS stocks_with_signal
-
+        COUNT(CASE WHEN sentiment_quintile = 5 THEN 1 END) AS q5_count,
+        COUNT(CASE WHEN sentiment_quintile = 1 THEN 1 END) AS q1_count,
+        COUNT(DISTINCT ticker) AS stocks_with_signal
     FROM base
     GROUP BY date_t
-
 ),
 
-vw_aggregated AS (
-
+liquidity_weighted AS (
     SELECT
         date_t,
-
         SUM(CASE WHEN sentiment_quintile = 5
-                 THEN forward_return_1d * dollar_volume END)
+                 THEN forward_return_close_to_close_1d * dollar_volume END)
         / NULLIF(SUM(CASE WHEN sentiment_quintile = 5
-                          THEN dollar_volume END), 0)                       AS q5_return_vw,
+                          THEN dollar_volume END), 0) AS q5_return_lw,
 
         SUM(CASE WHEN sentiment_quintile = 1
-                 THEN forward_return_1d * dollar_volume END)
+                 THEN forward_return_close_to_close_1d * dollar_volume END)
         / NULLIF(SUM(CASE WHEN sentiment_quintile = 1
-                          THEN dollar_volume END), 0)                       AS q1_return_vw
-
+                          THEN dollar_volume END), 0) AS q1_return_lw
     FROM base
     GROUP BY date_t
+),
 
+daily_returns AS (
+    SELECT
+        a.date_t,
+        a.return_date_t,
+        a.latest_return_date_t,
+        a.q5_return_ew,
+        a.q1_return_ew,
+        a.q5_return_ew - a.q1_return_ew AS long_short_return_ew,
+
+        l.q5_return_lw,
+        l.q1_return_lw,
+        l.q5_return_lw - l.q1_return_lw AS long_short_return_lw,
+
+        a.q5_count,
+        a.q1_count,
+        a.stocks_with_signal,
+        u.total_stocks,
+        u.stocks_without_current_metadata,
+        a.stocks_with_signal::FLOAT / NULLIF(u.total_stocks, 0) AS coverage_ratio
+    FROM aggregated a
+    LEFT JOIN liquidity_weighted l ON a.date_t = l.date_t
+    LEFT JOIN daily_universe u ON a.date_t = u.date_t
 )
 
 SELECT
-    a.date_t,
+    *,
 
-    -- Equal-weighted
-    a.q5_return as q5_return_ew,
-    a.q1_return as q1_return_ew,
-    a.q5_return - a.q1_return                                              AS spread_ew,
+    -- Canonical cumulative strategy return: compounded daily long-short returns.
+    PRODUCT(1 + long_short_return_ew) OVER (
+        ORDER BY date_t
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) - 1 AS cumulative_return_ew,
 
-    -- Value-weighted
-    v.q5_return_vw,
-    v.q1_return_vw,
-    v.q5_return_vw - v.q1_return_vw                                        AS spread_vw,
+    PRODUCT(1 + long_short_return_lw) OVER (
+        ORDER BY date_t
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) - 1 AS cumulative_return_lw,
 
-    -- Diagnostics
-    a.q5_count,
-    a.q1_count,
+    -- Arithmetic cumulative spread is retained as a research diagnostic only.
+    SUM(long_short_return_ew) OVER (
+        ORDER BY date_t
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS cumulative_spread_ew,
 
-    -- Coverage
-    a.stocks_with_signal,
-    u.total_stocks,
-    un.total_universe_stocks - u.total_stocks                             AS missing_price_count,
-    a.stocks_with_signal::FLOAT / NULLIF(u.total_stocks, 0)               AS coverage_ratio
+    SUM(long_short_return_lw) OVER (
+        ORDER BY date_t
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS cumulative_spread_lw,
 
-FROM aggregated a
-LEFT JOIN vw_aggregated v ON a.date_t = v.date_t
-LEFT JOIN daily_universe u ON a.date_t = u.date_t
-CROSS JOIN universe un
+    2.0 AS gross_exposure,
+    0.0 AS net_exposure,
 
-ORDER BY a.date_t
+    -- Backward-compatible aliases for the existing dashboard.
+    q5_return_lw AS q5_return_vw,
+    q1_return_lw AS q1_return_vw,
+    long_short_return_ew AS spread_ew,
+    long_short_return_lw AS spread_vw,
+    stocks_without_current_metadata AS missing_price_count
+FROM daily_returns
+ORDER BY date_t

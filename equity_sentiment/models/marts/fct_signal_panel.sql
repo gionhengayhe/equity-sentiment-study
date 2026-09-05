@@ -1,14 +1,29 @@
-WITH base AS (
+WITH company_metadata AS (
+    -- Current metadata is optional enrichment only. Collapsing to one row per
+    -- ticker prevents a current-company dimension issue from multiplying facts.
+    SELECT
+        ticker,
+        ANY_VALUE(name) AS name,
+        ANY_VALUE(sector) AS sector,
+        ANY_VALUE(industry) AS industry,
+        ANY_VALUE(sic) AS sic
+    FROM {{ ref('stg_companies') }}
+    GROUP BY ticker
+),
+
+base AS (
     SELECT
         p.ticker,
+        -- date_t is the canonical signal formation date at the 16:00 ET close.
         p.date_t,
 
         -- Price features
         p.close,
         p.volume,
-        p.return_1d,
-        p.log_return_1d,
-        p.forward_return_1d,
+        p.next_trading_date,
+        p.close_to_close_return_1d,
+        p.log_close_to_close_return_1d,
+        p.forward_return_close_to_close_1d,
 
         -- Sentiment features
         coalesce(s.weighted_sentiment, 0) AS weighted_sentiment,
@@ -20,17 +35,19 @@ WITH base AS (
         s.total_relevance,
         s.log_news_count,
 
-        -- Company metadata
+        -- Current company metadata; never used as an eligibility filter.
         c.name,
         c.sector,
         c.industry,
-        c.sic
+        c.sic,
+        CASE WHEN c.ticker IS NOT NULL THEN 1 ELSE 0 END
+            AS company_metadata_available_flag
 
     FROM {{ ref('int_price_features') }} p
     LEFT JOIN {{ ref('int_daily_sentiment') }} s
         ON p.ticker = s.ticker
         AND p.date_t = s.date_t
-    LEFT JOIN {{ ref('stg_companies') }} c
+    LEFT JOIN company_metadata c
         ON p.ticker = c.ticker
 
 ),
@@ -82,9 +99,15 @@ SELECT
     -- Price
     close,
     volume,
-    return_1d,
-    log_return_1d,
-    forward_return_1d,
+    next_trading_date,
+    close_to_close_return_1d,
+    log_close_to_close_return_1d,
+    forward_return_close_to_close_1d,
+
+    -- Backward-compatible aliases for the existing Power BI model.
+    close_to_close_return_1d AS return_1d,
+    log_close_to_close_return_1d AS log_return_1d,
+    forward_return_close_to_close_1d AS forward_return_1d,
 
     -- Sentiment
     weighted_sentiment,
@@ -100,6 +123,8 @@ SELECT
     sector,
     industry,
     sic,
+    company_metadata_available_flag,
+    1 AS point_in_time_universe_flag,
 
     -- Useful derived fields for dashboard slicing
     volume * close AS dollar_volume,

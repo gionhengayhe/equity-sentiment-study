@@ -1,0 +1,164 @@
+version: 2
+
+models:
+  - name: stg_ohlcs
+    description: Full point-in-time grouped US stock price tape without a current-company filter.
+    columns:
+      - name: ticker
+        data_tests: [not_null]
+      - name: date_t
+        data_tests: [not_null]
+      - name: close
+        data_tests: [not_null]
+      - name: volume
+        data_tests: [not_null]
+
+  - name: stg_news
+    description: Ticker-article sentiment records assigned to the canonical signal date.
+    columns:
+      - name: news_id
+        data_tests: [not_null]
+      - name: ticker
+        data_tests: [not_null]
+      - name: published_at
+        data_tests: [not_null]
+      - name: date_t
+        data_tests: [not_null]
+      - name: sentiment_score
+        data_tests: [not_null]
+      - name: relevance_score
+        data_tests: [not_null]
+
+  - name: stg_companies
+    description: Current company metadata used only for optional enrichment.
+    columns:
+      - name: ticker
+        data_tests: [not_null, unique]
+
+  - name: int_daily_sentiment
+    description: One relevance-weighted sentiment observation per ticker and signal date.
+    columns:
+      - name: ticker
+        data_tests: [not_null]
+      - name: date_t
+        data_tests: [not_null]
+      - name: weighted_sentiment
+        data_tests: [not_null]
+      - name: news_count
+        data_tests: [not_null]
+
+  - name: int_price_features
+    description: >
+      Daily close-based price features. date_t is the trading date of close_t;
+      the canonical target is the close on the common market calendar's immediately
+      following session divided by close_t minus one. Missing ticker prices are not skipped over.
+    columns:
+      - name: ticker
+        data_tests: [not_null]
+      - name: date_t
+        data_tests: [not_null]
+      - name: forward_return_close_to_close_1d
+        description: Close-to-close return from signal date t to the market's next trading session t+1.
+
+  - name: fct_signal_panel
+    description: >
+      Eligible ticker-signal-date observations driven by the point-in-time daily price tape,
+      not today's company master. date_t is the signal formation date; only records with
+      at least two qualifying ticker-news observations are ranked.
+    columns:
+      - name: ticker
+        data_tests: [not_null]
+      - name: date_t
+        data_tests: [not_null]
+      - name: sentiment_quintile
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5]
+      - name: forward_return_close_to_close_1d
+        description: Realized close-to-close return after portfolio formation at close_t.
+      - name: company_metadata_available_flag
+        description: Whether optional current company metadata was found; never used for eligibility.
+      - name: point_in_time_universe_flag
+        description: Always one; confirms the observation came from the contemporaneous price universe.
+
+  - name: fct_signal_daily
+    description: >
+      Daily Q5-minus-Q1 long-short strategy returns. Each leg has one unit of capital,
+      giving 200% gross exposure and 0% net exposure before costs.
+    columns:
+      - name: date_t
+        description: Signal formation and portfolio entry date at the 16:00 ET close.
+        data_tests: [not_null, unique]
+      - name: return_date_t
+        description: Common next-market-session date on which the portfolio return is realized.
+        data_tests: [not_null]
+      - name: long_short_return_ew
+        description: Equal-weighted Q5 return minus equal-weighted Q1 return for t to t+1.
+        data_tests: [not_null]
+      - name: long_short_return_lw
+        description: Dollar-volume-weighted Q5 return minus Q1 return; this is liquidity weighted, not market-cap weighted.
+        data_tests: [not_null]
+      - name: cumulative_return_ew
+        description: Compounded equal-weighted strategy return, product of one plus daily return minus one.
+        data_tests: [not_null]
+      - name: cumulative_return_lw
+        description: Compounded liquidity-weighted strategy return, product of one plus daily return minus one.
+        data_tests: [not_null]
+      - name: cumulative_spread_ew
+        description: Arithmetic sum of daily spreads, retained only as a research diagnostic.
+      - name: stocks_without_current_metadata
+        description: Point-in-time price-universe tickers absent from today's optional company master.
+      - name: gross_exposure
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [2.0]
+      - name: net_exposure
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0.0]
+
+  - name: fct_signal_rolling
+    description: Rolling descriptive statistics for the canonical equal-weighted long-short return.
+    columns:
+      - name: date_t
+        data_tests: [not_null, unique]
+      - name: t_stat_20d
+        description: Descriptive 20-observation t-statistic under an IID assumption; not a robust significance test.
+
+  - name: stg_fama_french_factors
+    description: Daily US Fama-French market, size, value, momentum, and risk-free returns in decimal units.
+    columns:
+      - name: date_t
+        data_tests: [not_null, unique]
+      - name: mkt_rf
+        data_tests: [not_null]
+      - name: smb
+        data_tests: [not_null]
+      - name: hml
+        data_tests: [not_null]
+      - name: mom
+        data_tests: [not_null]
+      - name: rf
+        data_tests: [not_null]
+
+  - name: fct_signal_daily_factors
+    description: Canonical daily long-short returns joined to daily US factors on return_date_t for robust regressions.
+    columns:
+      - name: date_t
+        data_tests: [not_null, unique]
+      - name: return_date_t
+        data_tests: [not_null]
+      - name: mkt_rf
+        data_tests: [not_null]
+      - name: smb
+        data_tests: [not_null]
+      - name: hml
+        data_tests: [not_null]
+      - name: mom
+        data_tests: [not_null]
+      - name: rf
+        data_tests: [not_null]
