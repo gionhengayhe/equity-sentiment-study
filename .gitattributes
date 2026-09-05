@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Generated analytical snapshot exceeds GitHub's regular blob-size limit.
+equity_sentiment/dev.duckdb filter=lfs diff=lfs merge=lfs -text
