@@ -1,15 +1,19 @@
-Welcome to your new dbt project!
+# Equity Sentiment dbt Project
 
-### Using the starter project
+Run from this directory with the repository-owned portable profile:
 
-Try running the following commands:
-- dbt run
-- dbt test
+```bash
+dbt build --profiles-dir .
+```
 
+The default source location is `../data`, the development database is `dev.duckdb`, and the production database is `prod.duckdb`. Override them when needed with:
 
-### Resources:
-- Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)
-- Check out [Discourse](https://discourse.getdbt.com/) for commonly asked questions and answers
-- Join the [chat](https://community.getdbt.com/) on Slack for live discussions and support
-- Find [dbt events](https://events.getdbt.com) near you
-- Check out [the blog](https://blog.getdbt.com/) for the latest news on dbt's development and best practices
+- `EQUITY_SENTIMENT_DATA_DIR`
+- `EQUITY_SENTIMENT_DB_PATH`
+- `EQUITY_SENTIMENT_PROD_DB_PATH`
+
+For the full transforms-to-notebook workflow, run this from the repository root:
+
+```bash
+python scripts/run_pipeline.py
+```

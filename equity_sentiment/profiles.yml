@@ -1,0 +1,15 @@
+equity_sentiment:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('EQUITY_SENTIMENT_DB_PATH', 'dev.duckdb') }}"
+      threads: 4
+      extensions:
+        - parquet
+    prod:
+      type: duckdb
+      path: "{{ env_var('EQUITY_SENTIMENT_PROD_DB_PATH', 'prod.duckdb') }}"
+      threads: 4
+      extensions:
+        - parquet

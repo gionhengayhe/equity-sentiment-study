@@ -1,10 +1,14 @@
 requests
 polars
+pandas
+pytz
+numpy
 python-dotenv
 dbt-core
 dbt-duckdb
 duckdb
-statsmodels
 ipykernel
+nbconvert
 matplotlib
 seaborn
+reportlab
