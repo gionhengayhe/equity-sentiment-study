@@ -1,10 +1,12 @@
 import json
 import glob
 import os
+from pathlib import Path
 import polars as pl
 
-RAW_PATH = "data/raw/ohlcs/crawl_ohlcs-{date}.json"
-PROCESSED_PATH = "data/processed/ohlcs/stg_ohlcs-{date}.parquet"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+RAW_PATH = str(PROJECT_ROOT / "data" / "raw" / "ohlcs" / "crawl_ohlcs-{date}.json")
+PROCESSED_PATH = str(PROJECT_ROOT / "data" / "processed" / "ohlcs" / "stg_ohlcs-{date}.parquet")
 
 
 def transform_ohlcs(date_str: str) -> pl.DataFrame:
@@ -12,8 +14,8 @@ def transform_ohlcs(date_str: str) -> pl.DataFrame:
     if not os.path.exists(path):
         raise FileNotFoundError(f"No raw file found at {path}")
 
-    with open(path, "r") as f:
-        raw = json.load(f)
+    with open(path, "r", encoding="utf-8") as handle:
+        raw = json.load(handle)
 
     if not raw:
         print(f"[{date_str}] Empty file, skipping.")
@@ -53,12 +55,12 @@ def transform_ohlcs(date_str: str) -> pl.DataFrame:
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     df.write_parquet(out_path)
 
-    print(f"[{date_str}] Transformed {len(df)} rows → {out_path}")
+    print(f"[{date_str}] Transformed {len(df)} rows -> {out_path}")
     return df
 
 
-def transform_all_ohlcs():
-    raw_files = sorted(glob.glob("data/raw/ohlcs/crawl_ohlcs-*.json"))
+def transform_all_ohlcs(overwrite: bool = False) -> None:
+    raw_files = sorted(glob.glob(str(PROJECT_ROOT / "data" / "raw" / "ohlcs" / "crawl_ohlcs-*.json")))
 
     if not raw_files:
         print("No raw files found.")
@@ -68,11 +70,11 @@ def transform_all_ohlcs():
     skipped = transformed = failed = 0
 
     for raw_path in raw_files:
-        # Extract date from filename: crawl_ohlcs-20260101.json → 20260101
+        # Extract date from filename: crawl_ohlcs-20260101.json -> 20260101
         date_str = os.path.basename(raw_path).replace("crawl_ohlcs-", "").replace(".json", "")
         out_path = PROCESSED_PATH.format(date=date_str)
 
-        if os.path.exists(out_path):
+        if os.path.exists(out_path) and not overwrite:
             print(f"[{date_str}] Already exists, skipping.")
             skipped += 1
             continue
@@ -85,7 +87,14 @@ def transform_all_ohlcs():
             failed += 1
 
     print(f"\nDone. Transformed: {transformed} | Skipped: {skipped} | Failed: {failed}")
+    if failed:
+        raise RuntimeError(f"OHLC transformation failed for {failed} partition(s).")
 
 
 if __name__ == "__main__":
-    transform_all_ohlcs()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Transform raw grouped OHLC files.")
+    parser.add_argument("--overwrite", action="store_true")
+    arguments = parser.parse_args()
+    transform_all_ohlcs(overwrite=arguments.overwrite)

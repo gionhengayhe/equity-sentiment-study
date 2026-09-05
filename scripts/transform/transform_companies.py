@@ -1,10 +1,12 @@
 import json
 import os
+from pathlib import Path
 import polars as pl
 
 COMPANY_FIELDS = ["ticker", "name", "exchange", "industry", "sector", "currency", "isDelisted", "category", "sic"]
-RAW_PATH = "data/raw/companies/crawl_companies.json"
-PROCESSED_PATH = "data/processed/companies/stg_companies.parquet"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+RAW_PATH = str(PROJECT_ROOT / "data" / "raw" / "companies" / "crawl_companies.json")
+PROCESSED_PATH = str(PROJECT_ROOT / "data" / "processed" / "companies" / "stg_companies.parquet")
 
 
 def clean_data(df: pl.DataFrame, required_cols: list[str] | None = None) -> pl.DataFrame:
@@ -17,8 +19,8 @@ def clean_data(df: pl.DataFrame, required_cols: list[str] | None = None) -> pl.D
 
 
 def transform_companies() -> pl.DataFrame:
-    with open(RAW_PATH, "r") as f:
-        companies = json.load(f)
+    with open(RAW_PATH, "r", encoding="utf-8") as handle:
+        companies = json.load(handle)
 
     records = [{field: company.get(field) for field in COMPANY_FIELDS} for company in companies]
     df = clean_data(pl.DataFrame(records), required_cols=["ticker", "name", "exchange"])
@@ -33,7 +35,7 @@ def transform_companies() -> pl.DataFrame:
     os.makedirs(os.path.dirname(PROCESSED_PATH), exist_ok=True)
     df_filtered.write_parquet(PROCESSED_PATH)
 
-    print(f"Filtered companies count: {len(df_filtered)} → saved to {PROCESSED_PATH}")
+    print(f"Filtered companies count: {len(df_filtered)} -> saved to {PROCESSED_PATH}")
     return df_filtered
 
 
